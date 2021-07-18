@@ -35,45 +35,23 @@ class Node<E> {
 
 class DoubleLinkedList<E> implements Deque<E> {
   int size = 0;
-  int? maxSize;
+  final maxSize;
   Node<E>? head;
   Node<E>? tail;
 
-  DoubleLinkedList([this.maxSize]) {}
+  DoubleLinkedList([this.maxSize]);
 
-  DoubleLinkedList.fromList(List<E> list) {
-    list.forEach((element) {
-      addLast(element);
-    });
+  DoubleLinkedList.fromList(List<E> list, [this.maxSize]) {
+    list.forEach(addLast);
   }
 
   static DoubleLinkedList<E> parse<E>(List<E> list) {
     return DoubleLinkedList.fromList(list);
   }
 
-  bool empty() => head == null;
+  bool isEmpty() => head == null;
 
-  void show() {
-    Node<E>? cur = head;
-    while (cur != null) {
-      print(cur);
-      cur = cur.next;
-    }
-  }
-
-  void showBack() {
-    Node<E>? cur = tail;
-    while (cur != null) {
-      print(cur);
-      cur = cur.prev;
-    }
-  }
-
-  void clear() {
-    while (!empty()) {
-      removeFirst();
-    }
-  }
+  bool isNotEmpty() => !isEmpty();
 
   void add(int idx, E data) {
     if (idx < 0 || idx > size) {
@@ -87,7 +65,7 @@ class DoubleLinkedList<E> implements Deque<E> {
     Node<E>? cur = head;
 
     if (idx == 0) {
-      head = new Node(data, null, head);
+      head = Node(data, null, head);
       tail = head!.next == null ? head : tail;
     } else {
       while (idx > 1) {
@@ -95,7 +73,7 @@ class DoubleLinkedList<E> implements Deque<E> {
         cur = cur!.next;
       }
 
-      cur!.next = new Node(data, cur, cur.next);
+      cur!.next = Node(data, cur, cur.next);
       tail = cur.next?.next == null ? cur.next : tail;
     }
 
@@ -127,6 +105,28 @@ class DoubleLinkedList<E> implements Deque<E> {
     size--;
   }
 
+  void show() {
+    Node<E>? cur = head;
+    while (cur != null) {
+      print(cur);
+      cur = cur.next;
+    }
+  }
+
+  void showBack() {
+    Node<E>? cur = tail;
+    while (cur != null) {
+      print(cur);
+      cur = cur.prev;
+    }
+  }
+
+  void clear() {
+    while (isNotEmpty()) {
+      removeFirst();
+    }
+  }
+
   void addFirst(E data) {
     if (size == maxSize) {
       throw Exception('IllegalStateException');
@@ -139,10 +139,10 @@ class DoubleLinkedList<E> implements Deque<E> {
       throw Exception('IllegalStateException');
     }
 
-    if (empty()) {
-      head = tail = new Node(data);
+    if (isEmpty()) {
+      head = tail = Node(data);
     } else {
-      tail!.next = new Node(data, tail);
+      tail!.next = Node(data, tail);
       tail = tail!.next;
     }
 
@@ -150,14 +150,14 @@ class DoubleLinkedList<E> implements Deque<E> {
   }
 
   E getFirst() {
-    if (empty()) {
+    if (isEmpty()) {
       throw Exception('NoSuchElementException');
     }
     return head!.data;
   }
 
   E getLast() {
-    if (empty()) {
+    if (isEmpty()) {
       throw Exception('NoSuchElementException');
     }
     return tail!.data;
@@ -188,46 +188,45 @@ class DoubleLinkedList<E> implements Deque<E> {
   }
 
   E? peekFirst() {
-    if (empty()) {
+    if (isEmpty()) {
       return null;
     }
     return getFirst();
   }
 
   E? peekLast() {
-    if (empty()) {
+    if (isEmpty()) {
       return null;
     }
     return getLast();
   }
 
   E? pollFirst() {
-    if (empty()) {
+    if (isEmpty()) {
       return null;
     }
     return removeFirst();
   }
 
   E? pollLast() {
-    if (empty()) {
+    if (isEmpty()) {
       return null;
     }
     return removeLast();
   }
 
   E removeFirst() {
-    if (empty()) {
+    if (isEmpty()) {
       throw Exception('NoSuchElementException');
     }
 
     E value = head!.data;
     remove(0);
-
     return value;
   }
 
   E removeLast() {
-    if (empty()) {
+    if (isEmpty()) {
       throw Exception('NoSuchElementException');
     }
 
@@ -284,9 +283,9 @@ class DoubleLinkedList<E> implements Deque<E> {
 
     Node<E>? cur = head;
 
-    while (idx > 0 && cur != null) {
+    while (idx > 0) {
       idx--;
-      cur = cur.next;
+      cur = cur!.next;
     }
 
     return cur;
