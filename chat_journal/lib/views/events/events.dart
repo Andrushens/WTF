@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -54,7 +56,7 @@ class EventsScreen extends StatelessWidget {
           ? IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () =>
-                  context.read<EventsCubit>()..changeSearchMode(false),
+                  context.read<EventsCubit>().changeSearchMode(false),
             )
           : const BackButton(),
       title: state.isSearchMode
@@ -73,7 +75,9 @@ class EventsScreen extends StatelessWidget {
                 ),
               ),
             )
-          : Center(child: Text(state.page!.title)),
+          : Center(
+              child: Text(context.read<EventsCubit>().state.page?.title ?? ''),
+            ),
       actions: _appBarActions(context),
     );
   }
@@ -312,12 +316,12 @@ class EventsScreen extends StatelessWidget {
                       children: [
                         TextSpan(
                           text: 'This is the page where you can track '
-                              'everything about "${state.page!.title}"!\n\n',
+                              'everything about "${state.page?.title}"!\n\n',
                           style: Theme.of(context).primaryTextTheme.bodyText1,
                         ),
                         TextSpan(
                           text:
-                              'Add you first event to "${state.page!.title}" page by '
+                              'Add you first event to "${state.page?.title}" page by '
                               'entering some text in the text box below '
                               'and hitting the send button. Tap on the '
                               'bookmark icon on the top right corner to '
@@ -404,7 +408,7 @@ class EventsScreen extends StatelessWidget {
               : Container(
                   width: 150,
                   height: 150,
-                  child: Image.file(event.image!),
+                  child: Image.file(File(event.imagePath!)),
                 ),
           const SizedBox(height: 5),
           Row(
@@ -416,7 +420,7 @@ class EventsScreen extends StatelessWidget {
                   size: 15,
                 ),
               const SizedBox(width: 5),
-              Text(event.formattedSendTime),
+              Text(event.formattedSendTime!),
             ],
           ),
         ],

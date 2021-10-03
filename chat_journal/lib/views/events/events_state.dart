@@ -1,6 +1,7 @@
 part of 'events_cubit.dart';
 
 class EventsState extends Equatable {
+  final int pageId;
   final PageInfo? page;
   final PageInfo? replyPage;
   final List<int> selectedEvents;
@@ -14,6 +15,7 @@ class EventsState extends Equatable {
   final bool isMessageEdit;
 
   EventsState({
+    this.pageId = -1,
     this.page,
     this.selectedEvents = const [],
     this.showEvents = const [],
@@ -31,6 +33,7 @@ class EventsState extends Equatable {
   });
 
   EventsState copyWith({
+    int? pageId,
     PageInfo? page,
     List<int>? selectedEvents,
     List<Event>? showEvents,
@@ -44,6 +47,7 @@ class EventsState extends Equatable {
     int? replyPageIndex,
   }) {
     return EventsState(
+      pageId: pageId ?? this.pageId,
       page: page ?? this.page,
       selectedEvents: selectedEvents ?? this.selectedEvents,
       showEvents: showEvents ?? this.showEvents,

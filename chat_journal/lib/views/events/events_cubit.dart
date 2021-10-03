@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../modules/page_info.dart';
+import '../../utils/data.dart';
+import '../../utils/database_provider.dart';
 import '../home/home_cubit.dart';
 
 part 'events_state.dart';
@@ -15,32 +15,20 @@ part 'events_state.dart';
 class EventsCubit extends Cubit<EventsState> {
   final Category _defaultCategory =
       const Category(icon: Icons.bubble_chart, title: '');
-  final List<Category> _initCategories = const <Category>[
-    Category(icon: Icons.favorite, title: 'favorite'),
-    Category(icon: Icons.ac_unit, title: 'unit'),
-    Category(icon: Icons.wine_bar, title: 'wine'),
-    Category(icon: Icons.local_pizza, title: 'pizza'),
-    Category(icon: Icons.money, title: 'money'),
-    Category(icon: Icons.car_rental, title: 'car'),
-    Category(icon: Icons.food_bank, title: 'food'),
-    Category(icon: Icons.navigation, title: 'navigation'),
-  ];
 
   EventsCubit() : super(EventsState());
 
-  void init(PageInfo page) {
+  void init(PageInfo page) async {
+    final events = await DatabaseProvider.fetchEvents(page.id!);
+    page = page.copyWith(events: events);
     emit(
       state.copyWith(
-        selectedCategory: _defaultCategory,
+        pageId: page.id,
         page: page,
-        replyPage: state.replyPage ?? page,
         categories:
-            state.categories.isEmpty ? _initCategories : state.categories,
-        showEvents: state.page == page
-            ? state.showEvents.isEmpty
-                ? page.events
-                : state.showEvents
-            : page.events,
+            state.categories.isEmpty ? initCategories : state.categories,
+        selectedCategory: _defaultCategory,
+        showEvents: events,
       ),
     );
   }
@@ -95,7 +83,9 @@ class EventsCubit extends Cubit<EventsState> {
   void changeBookmarkedOnly() {
     if (state.isBookmarkedOnly) {
       emit(state.copyWith(
-          showEvents: state.page!.events, isBookmarkedOnly: false));
+        showEvents: state.page!.events,
+        isBookmarkedOnly: false,
+      ));
     } else {
       final showEvents =
           state.page!.events.where((event) => event.isBookmarked).toList();
@@ -144,6 +134,7 @@ class EventsCubit extends Cubit<EventsState> {
     for (var index in selectedEvents) {
       updatedPage.events[index].isBookmarked =
           updatedPage.events[index].isBookmarked ? false : true;
+      DatabaseProvider.updateEvent(updatedPage.events[index]);
     }
     changeEditMode(false);
     unselectEvents();
@@ -151,9 +142,9 @@ class EventsCubit extends Cubit<EventsState> {
 
   void deleteEvent() {
     var selectedEvents = List<int>.from(state.selectedEvents)..sort();
-    var updatedPage = PageInfo.from(state.page!);
     for (var i = selectedEvents.length - 1; i >= 0; i--) {
-      updatedPage.events.removeAt(selectedEvents[i]);
+      DatabaseProvider.deleteEvent(state.page!.events[selectedEvents[i]]);
+      state.showEvents.remove(state.page!.events[selectedEvents[i]]);
     }
     changeEditMode(false);
     unselectEvents();
@@ -161,33 +152,50 @@ class EventsCubit extends Cubit<EventsState> {
 
   Future<void> addImageEvent() async {
     final imagePicker = ImagePicker();
-    final xFile = await imagePicker.pickImage(source: ImageSource.gallery);
-    if (xFile != null) {
-      var imageFile = File(xFile.path);
-      var updatedPage = PageInfo.from(state.page!)
-        ..events.insert(0, Event(image: imageFile));
-      emit(state.copyWith(page: updatedPage));
+    final imageFile = await imagePicker.pickImage(source: ImageSource.gallery);
+    if (imageFile != null) {
+      final event = Event(imagePath: imageFile.path, pageId: state.pageId);
+      state.page!.events.insert(0, event);
+      DatabaseProvider.insertEvent(event);
+      final s = state;
+      emit(state.copyWith(
+        showEvents: state.page!.events,
+        isBookmarkedOnly: false,
+      ));
+      print(s == state);
     }
   }
 
   void addMessageEvent(String text) {
-    PageInfo? updatedPage;
     if (state.selectedEvents.length == 1 && state.isMessageEdit) {
-      if (text.isEmpty) {
-        updatedPage = state.page!..events.removeAt(state.selectedEvents[0]);
-      } else {
-        updatedPage = state.page!
-          ..events[state.selectedEvents[0]].message = text
-          ..events[state.selectedEvents[0]].updateSendTime();
+      if (text.isNotEmpty) {
+        updateEvent(text);
       }
       emit(state.copyWith(selectedEvents: []));
     } else if (text.isNotEmpty) {
-      updatedPage = state.page!..events.insert(0, Event(message: text));
+      final event = Event(message: text, pageId: state.pageId);
       if (state.selectedCategory != _defaultCategory) {
-        updatedPage.events[0].category = state.selectedCategory;
+        event.category = state.selectedCategory;
         initDefaultCategory();
       }
+      DatabaseProvider.insertEvent(event);
+      state.page!.events.insert(0, event);
     }
-    emit(state.copyWith(page: updatedPage));
+    emit(state.copyWith(
+      showEvents: state.page!.events,
+      isBookmarkedOnly: false,
+    ));
+  }
+
+  void updateEvent(String text) {
+    final event = state.showEvents[state.selectedEvents[0]];
+    event.message = text;
+    if (state.selectedCategory != _defaultCategory) {
+      event.category = state.selectedCategory;
+      initDefaultCategory();
+    }
+    event.updateSendTime();
+    state.page!.events[state.selectedEvents[0]] = event;
+    DatabaseProvider.updateEvent(event);
   }
 }

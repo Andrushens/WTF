@@ -70,7 +70,7 @@ class CreatePageCubit extends Cubit<CreatePageState> {
     emit(state.copyWith(editPage: updatedPage));
   }
 
-  void setEditPage(PageInfo? page) {
+  void initEditPage(PageInfo? page) {
     if (page == null) {
       emit(state.copyWith(
         editPage: page,
@@ -78,11 +78,11 @@ class CreatePageCubit extends Cubit<CreatePageState> {
       ));
     } else {
       final icons = List<IconData>.from(state.icons);
-      final index = icons.indexOf(page.icon.icon!);
+      final index = icons.indexOf(page.icon!.icon!);
       if (index != -1) {
         icons.insert(0, icons.removeAt(index));
       } else {
-        icons.insert(0, page.icon.icon!);
+        icons.insert(0, page.icon!.icon!);
       }
       emit(state.copyWith(
         icons: icons,
